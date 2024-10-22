@@ -1,0 +1,87 @@
+import os
+import serial
+import time
+
+# Configurar el puerto serie del módem
+modem_port = '/dev/ttyUSB3'  # Cambia según tu configuración
+baud_rate = 115200
+ser = serial.Serial(modem_port, baud_rate, timeout=1)
+
+# Función para enviar comandos AT y recibir la respuesta
+def send_at_command(command):
+    ser.write((command + '\r').encode())
+    time.sleep(1)  # Espera la respuesta
+    response = ser.read_all().decode().strip()
+    print(f"Comando enviado: {command}, Respuesta recibida: {response}")
+    return response
+
+# Función para mostrar registros históricos
+def mostrar_registros_historicos():
+    try:
+        with open("reporte_fallos_red.txt", "r") as archivo:
+            registros = archivo.readlines()
+            print("Registros históricos:")
+            for linea in registros:
+                print(linea.strip())
+    except FileNotFoundError:
+        print("No se encontraron registros históricos.")
+
+# Función para eliminar el archivo de reportes
+def eliminar_archivo():
+    archivo = "reporte_fallos_red.txt"
+    try:
+        os.remove(archivo)
+        print(f"Archivo '{archivo}' eliminado correctamente.")
+    except FileNotFoundError:
+        print(f"El archivo '{archivo}' no existe.")
+    except Exception as e:
+        print(f"Error al eliminar el archivo: {e}")
+
+# Función para detectar fallos en la red
+def detectar_fallos():
+    fallos = {
+        0: "GSM/UMTS Call Attempt Failure",
+        1: "Call Attempt Failure",
+        2: "GSM/UMTS Call Dropped",
+        3: "Call Dropped",
+        4: "Data Server Connection Failure",
+        5: "Data Server Connection Dropped",
+        6: "File Transfer Failed",
+        7: "PDP Context/Data Session Dropped",
+        8: "Attach Attempt Failure",
+        9: "Handover Failure",
+        10: "GSM to UMTS Handover Failure",
+        11: "UMTS to GSM Handover Failure",
+        12: "Soft Handover Failure",
+        13: "Location Update Failure",
+        14: "RRC Connection Attempt Failure",
+        15: "RRC Connection Dropped",
+        16: "EVDO Connection Attempt Failure",
+        17: "EVDO Connection Dropped"
+    }
+    
+    # Simulación de estado de fallos (esto debería reemplazarse con lógica real)
+    estado_fallos = {key: "no detectado." for key in fallos}
+
+    # Guardar el reporte
+    with open("reporte_fallos_red.txt", "a") as archivo:
+        fecha_hora = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        archivo.write(f"Reporte de fallos de red - {fecha_hora}\n")
+        for key, value in estado_fallos.items():
+            archivo.write(f"{fallos[key]} {value}\n")
+        archivo.write("\n")
+        
+    print(f"Reporte guardado en 'reporte_fallos_red.txt'.")
+
+# Mostrar registros históricos al inicio
+mostrar_registros_historicos()
+
+# Preguntar al usuario si desea eliminar el archivo
+eliminar = input("¿Deseas eliminar el archivo de reportes? (s/n): ")
+if eliminar.lower() == 's':
+    eliminar_archivo()
+
+# Ejecutar el monitoreo cada cierto tiempo
+while True:
+    detectar_fallos()
+    time.sleep(60)  # Espera 60 segundos antes de la siguiente verificación
